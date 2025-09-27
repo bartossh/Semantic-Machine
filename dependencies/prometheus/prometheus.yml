@@ -1,0 +1,151 @@
+# =============================================================================
+# Prometheus Configuration for semantic_machine Backend Services (Development)
+# =============================================================================
+# This configuration is optimized for local development environment
+# with services running on localhost.
+
+global:
+    scrape_interval: 15s
+
+    scrape_timeout: 10s
+
+    evaluation_interval: 15s
+
+    external_labels:
+        cluster: "semantic_machine-dev"
+        environment: "development"
+
+alerting:
+    alertmanagers:
+        - static_configs:
+              - targets: []
+
+rule_files:
+    # - "rules/*.yml"
+    # - "alerts/*.yml"
+
+scrape_configs:
+    # =============================================================================
+    # CORE MICROSERVICES (Development)
+    # =============================================================================
+
+    - job_name: "api"
+      metrics_path: "/metrics"
+      scrape_interval: 10s
+      scrape_timeout: 5s
+      static_configs:
+          - targets: ["host.docker.internal:8080"]
+            labels:
+                service: "api"
+                tier: "gateway"
+                component: "backend"
+                env: "development"
+
+    # =============================================================================
+    # DEVELOPMENT INFRASTRUCTURE
+    # =============================================================================
+
+    - job_name: "minio-dev"
+      metrics_path: "/minio/v2/metrics/cluster"
+      scheme: http
+      scrape_interval: 30s
+      scrape_timeout: 10s
+      static_configs:
+          - targets: ["minio:9000"]
+            labels:
+                service: "minio"
+                tier: "storage"
+                component: "infrastructure"
+                env: "development"
+
+    - job_name: "postgres-dev"
+      metrics_path: "/metrics"
+      scrape_interval: 30s
+      scrape_timeout: 10s
+      static_configs:
+          - targets: ["postgres-exporter:9187"]
+            labels:
+                service: "postgres"
+                tier: "database"
+                component: "infrastructure"
+                env: "development"
+
+    - job_name: "redis-dev"
+      metrics_path: "/metrics"
+      scrape_interval: 15s
+      scrape_timeout: 5s
+      static_configs:
+          - targets: ["redis-exporter:9121"]
+            labels:
+                service: "redis"
+                tier: "cache"
+                component: "infrastructure"
+                env: "development"
+
+    - job_name: "prometheus-dev"
+      metrics_path: "/metrics"
+      scrape_interval: 30s
+      scrape_timeout: 10s
+      static_configs:
+          - targets: ["localhost:9090"]
+            labels:
+                service: "prometheus"
+                tier: "monitoring"
+                component: "observability"
+                env: "development"
+
+    - job_name: "grafana-dev"
+      metrics_path: "/metrics"
+      scrape_interval: 30s
+      scrape_timeout: 10s
+      static_configs:
+          - targets: ["grafana:3000"]
+            labels:
+                service: "grafana"
+                tier: "monitoring"
+                component: "observability"
+                env: "development"
+
+    - job_name: "jaeger-dev"
+      metrics_path: "/metrics"
+      scrape_interval: 30s
+      scrape_timeout: 10s
+      static_configs:
+          - targets: ["jaeger:14269"]
+            labels:
+                service: "jaeger"
+                tier: "tracing"
+                component: "observability"
+                env: "development"
+
+    - job_name: "nats-dev"
+      metrics_path: "/metrics"
+      scrape_interval: 15s
+      scrape_timeout: 5s
+      static_configs:
+          - targets: ["nats:8222"]
+            labels:
+                service: "nats"
+                tier: "messaging"
+                component: "infrastructure"
+                env: "development"
+# =============================================================================
+# REMOTE WRITE CONFIGURATION (Optional)
+# =============================================================================
+# Uncomment to enable remote write to long-term storage
+
+# remote_write:
+#   - url: "http://cortex:9009/api/v1/push"
+#     queue_config:
+#       max_samples_per_send: 1000
+#       max_shards: 200
+#       capacity: 2500
+
+# =============================================================================
+# REMOTE READ CONFIGURATION (Optional)
+# =============================================================================
+# Uncomment to enable remote read from long-term storage
+
+# remote_read:
+#   - url: "http://cortex:9009/api/v1/read"
+#     read_recent: true

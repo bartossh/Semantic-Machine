@@ -1,0 +1,252 @@
+version: "3.8"
+
+services:
+    postgres:
+        image: timescale/timescaledb:latest-pg17
+        container_name: semantic-machine-postgres-dev
+        environment:
+            POSTGRES_USER: postgres
+            POSTGRES_PASSWORD: password
+            POSTGRES_DB: semantic-machine
+            POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+        ports:
+            - "5432:5432"
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+            - ./init-scripts:/docker-entrypoint-initdb.d
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U postgres"]
+            interval: 10s
+            timeout: 5s
+            retries: 5
+        networks:
+            - semantic-machine
+
+    nats:
+        image: nats:latest
+        container_name: semantic-machine-nats-dev
+        ports:
+            - "4222:4222"
+            - "8222:8222"
+        command: ["-js", "-m", "8222", "--server_name", "nats-server"]
+        restart: unless-stopped
+        networks:
+            - semantic-machine
+
+    redis:
+        image: redis:7-alpine
+        container_name: semantic-machine-redis-dev
+        command: redis-server --appendonly yes --requirepass password
+        environment:
+            REDIS_PASSWORD: password
+        ports:
+            - "6379:6379"
+        volumes:
+            - redis_data:/data
+        healthcheck:
+            test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+            interval: 10s
+            timeout: 3s
+            retries: 5
+        networks:
+            - semantic-machine
+
+    minio:
+        image: minio/minio:latest
+        container_name: semantic-machine-minio-dev
+        command: server /data --console-address ":9001"
+        environment:
+            MINIO_ROOT_USER: minioadmin
+            MINIO_ROOT_PASSWORD: minioadmin123
+            MINIO_BROWSER_REDIRECT_URL: http://localhost:9001
+        ports:
+            - "9000:9000" # API
+            - "9001:9001" # Console
+        volumes:
+            - minio_data:/data
+        healthcheck:
+            test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+            interval: 30s
+            timeout: 20s
+            retries: 3
+        networks:
+            - semantic-machine
+
+    minio-init:
+        image: minio/mc:latest
+        container_name: semantic-machine-minio-init
+        depends_on:
+            minio:
+                condition: service_healthy
+        entrypoint: >
+            /bin/sh -c "
+            /usr/bin/mc alias set minio http://minio:9000 minioadmin minioadmin123;
+            /usr/bin/mc mb minio/semantic-machine-storage || true;
+            /usr/bin/mc mb minio/semantic-machine-backups || true;
+            /usr/bin/mc mb minio/semantic-machine-uploads || true;
+            /usr/bin/mc policy set public minio/semantic-machine-storage;
+            /usr/bin/mc admin user add minio semantic-machine-user semantic-machine-password;
+            /usr/bin/mc admin policy attach minio readwrite --user semantic-machine-user;
+            echo 'MinIO buckets created successfully';
+            exit 0;
+            "
+        networks:
+            - semantic-machine
+
+    prometheus:
+        image: prom/prometheus:latest
+        container_name: semantic-machine-prometheus-dev
+        command:
+            - "--config.file=/etc/prometheus/prometheus.yml"
+            - "--storage.tsdb.path=/prometheus"
+            - "--web.console.libraries=/etc/prometheus/console_libraries"
+            - "--web.console.templates=/etc/prometheus/consoles"
+            - "--web.enable-lifecycle"
+            - "--web.enable-admin-api"
+        ports:
+            - "9090:9090"
+        volumes:
+            - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+            - prometheus_data:/prometheus
+        healthcheck:
+            test:
+                [
+                    "CMD",
+                    "wget",
+                    "--no-verbose",
+                    "--tries=1",
+                    "--spider",
+                    "http://localhost:9090/-/healthy",
+                ]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+        networks:
+            - semantic-machine
+
+    grafana:
+        image: grafana/grafana:latest
+        container_name: semantic-machine-grafana-dev
+        environment:
+            GF_SECURITY_ADMIN_USER: admin
+            GF_SECURITY_ADMIN_PASSWORD: admin
+            GF_USERS_ALLOW_SIGN_UP: "false"
+            GF_SECURITY_ALLOW_EMBEDDING: "true"
+            GF_INSTALL_PLUGINS: grafana-piechart-panel,redis-datasource
+        ports:
+            - "3000:3000"
+        volumes:
+            - grafana_data:/var/lib/grafana
+            - ./grafana/dashboards:/var/lib/grafana/dashboards
+            - ./grafana/provisioning:/etc/grafana/provisioning
+        healthcheck:
+            test:
+                [
+                    "CMD-SHELL",
+                    "wget --no-verbose --tries=1 --spider http://localhost:3000/api/health || exit 1",
+                ]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+        networks:
+            - semantic-machine
+        depends_on:
+            prometheus:
+                condition: service_healthy
+
+    jaeger:
+        image: jaegertracing/all-in-one:latest
+        container_name: semantic-machine-jaeger-dev
+        environment:
+            COLLECTOR_OTLP_ENABLED: "true"
+            COLLECTOR_ZIPKIN_HOST_PORT: ":9411"
+            SPAN_STORAGE_TYPE: memory
+            QUERY_BASE_PATH: /jaeger
+        ports:
+            - "16686:16686" # Jaeger UI
+            - "14250:14250" # gRPC
+            - "14268:14268" # HTTP
+            - "4317:4317" # OTLP gRPC
+            - "4318:4318" # OTLP HTTP
+            - "9411:9411" # Zipkin
+        volumes:
+            - jaeger_data:/tmp
+        healthcheck:
+            test:
+                ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:14269/"]
+            interval: 30s
+            timeout: 10s
+            retries: 3
+        networks:
+            - semantic-machine
+
+    pgadmin:
+        image: dpage/pgadmin4:latest
+        container_name: semantic-machine-pgadmin-dev
+        environment:
+            PGADMIN_DEFAULT_EMAIL: admin@semantic-machine.finance
+            PGADMIN_DEFAULT_PASSWORD: admin
+            PGADMIN_CONFIG_SERVER_MODE: "False"
+            PGADMIN_CONFIG_MASTER_PASSWORD_REQUIRED: "False"
+        ports:
+            - "8080:80"
+        volumes:
+            - pgadmin_data:/var/lib/pgadmin
+        networks:
+            - semantic-machine
+        depends_on:
+            - postgres
+        profiles:
+            - tools
+
+    postgres-exporter:
+        image: prometheuscommunity/postgres-exporter:latest
+        container_name: semantic-machine-postgres-exporter-dev
+        environment:
+            DATA_SOURCE_NAME: "postgresql://postgres:password@postgres:5432/semantic-machine?sslmode=disable"
+        ports:
+            - "9187:9187"
+        networks:
+            - semantic-machine
+        depends_on:
+            postgres:
+                condition: service_healthy
+        profiles:
+            - monitoring
+
+    redis-exporter:
+        image: oliver006/redis_exporter:latest
+        container_name: semantic-machine-redis-exporter-dev
+        environment:
+            REDIS_ADDR: "redis://redis:6379"
+            REDIS_PASSWORD: password
+        ports:
+            - "9121:9121"
+        networks:
+            - semantic-machine
+        depends_on:
+            redis:
+                condition: service_healthy
+        profiles:
+            - monitoring
+
+volumes:
+    postgres_data:
+        driver: local
+    redis_data:
+        driver: local
+    grafana_data:
+        driver: local
+    prometheus_data:
+        driver: local
+    jaeger_data:
+        driver: local
+    pgadmin_data:
+        driver: local
+    minio_data:
+        driver: local
+
+networks:
+    semantic-machine:
+        driver: bridge
+        name: semantic-machine-network
