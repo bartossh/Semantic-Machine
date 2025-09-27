@@ -185,7 +185,8 @@ impl JwtConfig {
                 .parse()
                 .map_err(|_| ConfigError::ParseError("JWT_EXPIRATION_HOURS".to_string()))?,
             issuer: env::var("JWT_ISSUER").unwrap_or_else(|_| "Semantic-Machine-api".to_string()),
-            audience: env::var("JWT_AUDIENCE").unwrap_or_else(|_| "Semantic-Machine-services".to_string()),
+            audience: env::var("JWT_AUDIENCE")
+                .unwrap_or_else(|_| "Semantic-Machine-services".to_string()),
         })
     }
 }

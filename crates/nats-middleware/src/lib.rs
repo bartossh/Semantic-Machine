@@ -450,12 +450,18 @@ mod tests {
     fn test_subject_builder() {
         let builder = SubjectBuilder::new("semantic_machine.webhooks");
 
-        assert_eq!(builder.webhook_received(), "semantic_machine.webhooks.webhook.received");
+        assert_eq!(
+            builder.webhook_received(),
+            "semantic_machine.webhooks.webhook.received"
+        );
         assert_eq!(
             builder.webhook_processed(),
             "semantic_machine.webhooks.webhook.processed"
         );
-        assert_eq!(builder.webhook_failed(), "semantic_machine.webhooks.webhook.failed");
+        assert_eq!(
+            builder.webhook_failed(),
+            "semantic_machine.webhooks.webhook.failed"
+        );
         assert_eq!(builder.health_check(), "semantic_machine.webhooks.health");
         assert_eq!(builder.custom("test"), "semantic_machine.webhooks.test");
     }

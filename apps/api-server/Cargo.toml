@@ -12,7 +12,7 @@ jsonwebtoken = { workspace = true }
 chrono = { workspace = true }
 utoipa = { workspace = true }
 utoipa-swagger-ui = { workspace = true }
-dotenv = { workspace = true }
+dotenvy = { workspace = true }
 env_logger = { workspace = true }
 log = { workspace = true }
 tokio = { workspace = true }

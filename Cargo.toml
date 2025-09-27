@@ -20,7 +20,7 @@ utoipa = { version = "5.4.0", features = ["actix_extras", "chrono"] }
 utoipa-swagger-ui = { version = "9.0.2", features = ["actix-web"] }
 bs58 = { version = "0.5.1", features = ["alloc"] }
 uuid = { version = "1.18.1", features = ["v4", "serde"] }
-dotenv = "0.15.0"
+dotenvy = "0.15.7"
 env_logger = "0.11.8"
 log = "0.4.28"
 actix-web-prom = "0.10.0"
@@ -60,6 +60,7 @@ base64 = "0.22.1"
 async-nats = "0.43.1"
 tokio-test = "0.4.4"
 hmac = "0.12.1"
+rust-tdlib = "0.4.3"
 
 llm-bert = { path = "crates/llm-bert" }
 nats-middleware = { path = "crates/nats-middleware" }

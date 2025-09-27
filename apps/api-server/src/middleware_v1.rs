@@ -5,14 +5,14 @@ use crate::{
     constants::{API_VERSION, BEARER},
 };
 use actix_web::{
-    dev::{forward_ready, Service, ServiceRequest, ServiceResponse, Transform},
+    Error, HttpMessage,
+    dev::{Service, ServiceRequest, ServiceResponse, Transform, forward_ready},
     error::ErrorUnauthorized,
     http::header::AUTHORIZATION,
-    Error, HttpMessage,
 };
 use futures::future::LocalBoxFuture;
 use std::{
-    future::{ready, Ready},
+    future::{Ready, ready},
     sync::Arc,
     time::Instant,
 };
@@ -77,21 +77,21 @@ where
                 .get(AUTHORIZATION)
                 .and_then(|h| h.to_str().ok());
 
-            if let Some(auth_str) = auth_header {
-                if auth_str.starts_with(BEARER) {
-                    let Some(token) = auth_str.strip_prefix(BEARER) else {
-                        return Err(ErrorUnauthorized("Invalid token"));
-                    };
+            if let Some(auth_str) = auth_header
+                && auth_str.starts_with(BEARER)
+            {
+                let Some(token) = auth_str.strip_prefix(BEARER) else {
+                    return Err(ErrorUnauthorized("Invalid token"));
+                };
 
-                    match authenticator.validate_token(token) {
-                        Ok(claims) => {
-                            req.extensions_mut().insert(claims);
-                            let res = service.call(req).await?;
-                            return Ok(res);
-                        }
-                        Err(_) => {
-                            return Err(ErrorUnauthorized("Invalid token"));
-                        }
+                match authenticator.validate_token(token) {
+                    Ok(claims) => {
+                        req.extensions_mut().insert(claims);
+                        let res = service.call(req).await?;
+                        return Ok(res);
+                    }
+                    Err(_) => {
+                        return Err(ErrorUnauthorized("Invalid token"));
                     }
                 }
             }

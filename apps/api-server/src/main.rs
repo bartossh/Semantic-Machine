@@ -6,7 +6,7 @@ use auth::Authenticator;
 use config::Config;
 use database::PostgresStorageGateway;
 use domain::Domain;
-use dotenv::dotenv;
+use dotenvy::dotenv;
 use sqlx::migrate::Migrator;
 use std::io::{Error, ErrorKind};
 use std::sync::Arc;
@@ -215,7 +215,5 @@ async fn main() -> std::io::Result<()> {
         tracing::info!("📈 Prometheus metrics enabled at /metrics");
     }
 
-    let result = server.run().await;
-
-    result
+    server.run().await
 }

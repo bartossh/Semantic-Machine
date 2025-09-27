@@ -337,7 +337,7 @@ dependencies = [
  "base64",
  "bs58",
  "chrono",
- "dotenv",
+ "dotenvy",
  "ed25519-dalek",
  "env_logger",
  "futures",
@@ -850,16 +850,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "dotenv"
-version = "0.15.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "77c90badedccf4105eca100756a0b1289e191f6fcbdadd3cee1d2f614f97da8f"
-
-[[package]]
 name = "dotenvy"
 version = "0.15.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1aaf95b3e5c8f23aa320147307562d361db0ae0d51242340f558153b4eb2439b"
+
+[[package]]
+name = "dyn-clone"
+version = "1.0.20"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d0881ea181b1df73ff77ffaaf9c7544ecc11e82fba9b5f27b262a3c73a332555"
 
 [[package]]
 name = "ed25519"
@@ -2436,6 +2436,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "rust-tdlib"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "54d5f828797dc6eb8e84388f776d8be2805a96978c65d9de010b12fcda19604d"
+dependencies = [
+ "async-trait",
+ "dyn-clone",
+ "futures",
+ "lazy_static",
+ "log",
+ "serde",
+ "serde_derive",
+ "serde_json",
+ "tokio",
+ "uuid",
+]
+
+[[package]]
 name = "rustc-demangle"
 version = "0.1.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3046,6 +3064,14 @@ dependencies = [
 [[package]]
 name = "telegram-worker"
 version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "dotenvy",
+ "rust-tdlib",
+ "serde",
+ "serde_json",
+ "tokio",
+]
 
 [[package]]
 name = "thiserror"

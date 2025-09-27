@@ -1,5 +1,4 @@
 use crate::{config::JwtConfig, models::Claims};
-use actix_web::http::header::USER_AGENT;
 use chrono::{Duration, Utc};
 use jsonwebtoken::{DecodingKey, EncodingKey, Header, Validation, decode, encode};
 

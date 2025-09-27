@@ -57,6 +57,7 @@ pub trait StoreReadBulkEntities<Entity, Identifier> {
 
 /// Represents a type that can filter and paginate entities from storage.
 #[async_trait::async_trait]
+#[allow(dead_code)]
 pub trait StorePaginateBulkEntities<Entity> {
     /// Filters and paginates entities from storage.
     ///
@@ -81,7 +82,7 @@ pub trait StorePaginateBulkEntities<Entity> {
 macro_rules! count_exprs {
     () => (0usize);
     ($head:expr) => (1usize);
-    ($head:expr, $($tail:expr),*) => (1usize + crate::count_exprs!($($tail),*));
+    ($head:expr, $($tail:expr),*) => (1usize + $crate::count_exprs!($($tail),*));
 }
 
 #[macro_export]
@@ -92,7 +93,7 @@ macro_rules! impl_store_bulk {
         $conflict_field:literal,
     ) => {
         #[async_trait::async_trait]
-        impl crate::database::StoreInsertBulk<$model, $id_type> for crate::database::PostgresStorageGateway {
+        impl $crate::database::StoreInsertBulk<$model, $id_type> for $crate::database::PostgresStorageGateway {
             #[inline(always)]
             async fn insert_bulk(&self, transactions: &[$model]) -> Result<Vec<$id_type>> {
                 if transactions.is_empty() {
@@ -106,7 +107,7 @@ macro_rules! impl_store_bulk {
                 );
 
                 let mut params: Vec<String> = Vec::new();
-                let field_count = crate::count_exprs!($($field),*);
+                let field_count = $crate::count_exprs!($($field),*);
                 for i in 0..transactions.len() {
                     let placeholders: Vec<String> = (1..=field_count)
                         .map(|j| format!("${}", i * field_count + j))
@@ -154,7 +155,7 @@ macro_rules! impl_read_bulk_by_ids {
         $id_field:literal,
     ) => {
         #[async_trait::async_trait]
-        impl StoreReadBulkEntities<$model, $id_type> for crate::PostgresStorageGateway {
+        impl StoreReadBulkEntities<$model, $id_type> for $crate::PostgresStorageGateway {
             #[inline(always)]
             async fn read_bulk_by_ids(&self, ids: &[$id_type]) -> Result<Vec<$model>> {
                 if ids.is_empty() {
@@ -197,7 +198,7 @@ macro_rules! impl_read_bulk_multiple {
         $field_map_type:ty
     ) => {
         #[async_trait::async_trait]
-        impl crate::database::StorePaginateBulkEntities<$model> for crate::PostgresStorageGateway {
+        impl $crate::database::StorePaginateBulkEntities<$model> for $crate::PostgresStorageGateway {
             #[inline(always)]
             async fn filter_paginate(
                 &self,
