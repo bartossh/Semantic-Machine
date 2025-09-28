@@ -2,6 +2,10 @@
 
 The Semantic Machine is an advanced natural language processing (NLP) and semantic analysis platform designed to extract, interpret, and evaluate textual data related to financial markets, with a specialized emphasis on the cryptocurrency sector.
 
+[![PR Checks](https://github.com/bartossh/Semantic-Machine/actions/workflows/pre-checks.yml/badge.svg)](https://github.com/bartossh/Semantic-Machine/actions/workflows/pre-checks.yml)
+
+[![Security Audit](https://github.com/bartossh/Semantic-Machine/actions/workflows/audit.yml/badge.svg)](https://github.com/bartossh/Semantic-Machine/actions/workflows/audit.yml)
+
 ## Project Structure
 
  - crates:
