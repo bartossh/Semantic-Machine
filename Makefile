@@ -17,6 +17,10 @@ DOCKER = docker
 
 # === Development Commands ===
 
+.PHONY: audit
+audit:
+	$(CARGO) audit
+
 .PHONY: lint
 lint:
 	$(CARGO) clippy -- -D warnings

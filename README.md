@@ -7,10 +7,11 @@ The Semantic Machine is an advanced natural language processing (NLP) and semant
  - crates:
    - llm-bert - large language bert model runtime entrypoint
    - nats-middleware - NATS middleware for handling subject building and routing
+   - shared-states - shared state management for the Semantic Machine
  - apps:
-   - telegram-worker - telegram worker reading data from telegram channels and using semantic strategies to analyze data and generate insights
+   - rss-worker - message worker reading data from rss channels
    - api-server - RESTful API server for exposing semantic analysis endpoints
-   
+
 ## Technology stack
 
 - Rust version 1.90.0 or newer
