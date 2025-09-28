@@ -64,9 +64,12 @@ impl RssFeedsProcessor {
             let rss_item: RssItem = serde_json::from_slice(&message.payload)?;
             let hash = rss_item.hash.clone();
             match self.storage.read_bulk_by_ids(&[hash]).await {
-                Ok(ids) => {
-                    if !ids.is_empty() {
-                        tracing::info!("RSS item already exists: {ids:?}");
+                Ok(item) => {
+                    if !item.is_empty() {
+                        let Some(item) = item.first() else {
+                            continue;
+                        };
+                        tracing::info!("RSS item already exists: {}", item.hash);
                         continue;
                     }
                 }
