@@ -37,6 +37,6 @@ fmt/fix:
 build:
 	$(CARGO) build
 
-.PHONY: test
-test:
+.PHONY: unit-test
+unit-test:
 	$(CARGO) test
