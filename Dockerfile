@@ -12,7 +12,7 @@ COPY Cargo.toml Cargo.lock ./
 COPY crates crates/
 COPY apps apps/
 
-ARG BIN_NAME=api-service
+ARG BIN_NAME=api-server
 ENV BIN_NAME=${BIN_NAME}
 
 RUN cargo clean
@@ -20,7 +20,7 @@ RUN cargo build --release --bin ${BIN_NAME}
 
 FROM gcr.io/distroless/cc-debian12
 
-ARG BIN_NAME=api-service
+ARG BIN_NAME=api-server
 ARG SERVER_HOST=0.0.0.0
 ARG SERVER_PORT=8080
 
