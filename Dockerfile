@@ -17,6 +17,7 @@ ENV BIN_NAME=${BIN_NAME}
 
 RUN cargo clean
 RUN cargo build --release --bin ${BIN_NAME}
+RUN chmod +x /app/target/release/${BIN_NAME}
 
 FROM gcr.io/distroless/cc-debian12
 
@@ -31,7 +32,7 @@ ENV SERVER_PORT=${SERVER_PORT}
 WORKDIR /app
 
 COPY --from=builder /usr/src/app/target/release/${BIN_NAME} /app/executable
-COPY --from=builder /usr/src/app/apps/api-service/migrations /app/migrations
+COPY --from=builder /usr/src/app/apps/api-server/migrations /app/migrations
 
 EXPOSE ${SERVER_PORT}
 
