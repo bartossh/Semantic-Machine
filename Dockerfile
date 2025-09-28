@@ -31,7 +31,7 @@ ENV SERVER_PORT=${SERVER_PORT}
 WORKDIR /app
 
 COPY --from=builder /usr/src/app/target/release/${BIN_NAME} /app/executable
-COPY --from=builder /usr/src/app/apps/${BIN_NAME}/migrations /app/migrations
+COPY --from=builder /usr/src/app/apps/api-service/migrations /app/migrations
 
 EXPOSE ${SERVER_PORT}
 
