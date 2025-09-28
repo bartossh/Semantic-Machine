@@ -17,7 +17,7 @@ ENV BIN_NAME=${BIN_NAME}
 
 RUN cargo clean
 RUN cargo build --release --bin ${BIN_NAME}
-RUN chmod +x /app/target/release/${BIN_NAME}
+RUN chmod +x /usr/src/app/target/release/${BIN_NAME}
 
 FROM gcr.io/distroless/cc-debian12
 
