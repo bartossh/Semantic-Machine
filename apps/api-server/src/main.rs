@@ -7,6 +7,7 @@ use config::Config;
 use database::PostgresStorageGateway;
 use domain::Domain;
 use dotenvy::dotenv;
+use nats_middleware::NatsQueue;
 use sqlx::migrate::Migrator;
 use std::io::{Error, ErrorKind};
 use std::sync::Arc;
@@ -16,12 +17,15 @@ use tokio::time::interval;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
+use crate::message_queue::RssFeedsProcessor;
+
 mod auth;
 mod config;
 mod constants;
 mod database;
 mod domain;
 mod handlers_v1;
+mod message_queue;
 mod middleware_v1;
 mod models;
 mod telemetry;
@@ -84,9 +88,7 @@ async fn main() -> std::io::Result<()> {
     dotenv().ok();
 
     let config = Config::from_env().expect("Failed to load configuration");
-
     config.validate().expect("Invalid configuration");
-
     telemetry::init_telemetry(&config).expect("Failed to initialize telemetry");
 
     tracing::info!(
@@ -105,8 +107,19 @@ async fn main() -> std::io::Result<()> {
         .map_err(to_io_error)?;
 
     let migrator: Migrator = sqlx::migrate!("./migrations");
-
     storage.migrate(migrator).await.map_err(to_io_error)?;
+
+    let nats_queue = NatsQueue::new(config.nats.clone())
+        .await
+        .map_err(|e| anyhow!("Cannot connect to NATs, {e}"))
+        .map_err(to_io_error)?;
+
+    let message_queue_processor = RssFeedsProcessor::new(storage.clone(), nats_queue);
+    tokio::spawn(async move {
+        if let Err(e) = message_queue_processor.run().await {
+            panic!("Error running message queue processor: {}", e);
+        }
+    });
 
     let auth = Authenticator::new(&config.jwt);
     let auth_arc = Arc::new(Authenticator::new(&config.jwt));

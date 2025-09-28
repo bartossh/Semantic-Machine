@@ -23,14 +23,14 @@ pub struct SolanaUser {
 impl_store_bulk!(
     SolanaUser,
     [u8; 32],
-    "users",
+    "solana_users",
     [solana_wallet_public_key, created_at],
     "solana_wallet_public_key",
 );
 
 impl_read_bulk_multiple!(
     SolanaUser,
-    "users",
+    "solana_users",
     [user_id, solana_wallet_public_key, created_at],
     &HashMap<String, String>
 );
@@ -38,7 +38,7 @@ impl_read_bulk_multiple!(
 impl_read_bulk_by_ids!(
     SolanaUser,
     [u8; 32],
-    "users",
+    "solana_users",
     [user_id, solana_wallet_public_key, created_at],
     "solana_wallet_public_key",
 );

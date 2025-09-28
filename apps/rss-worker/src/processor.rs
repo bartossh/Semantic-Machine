@@ -1,18 +1,17 @@
+use std::sync::Arc;
+
 use crate::config::RssConfig;
-use anyhow::Result;
+use anyhow::{Result, anyhow};
+use nats_middleware::NatsQueue;
 use reqwest::Client;
 use rss::Channel;
-use shared_states::RssItem;
-use std::collections::HashSet;
-use tokio::time::sleep;
+use shared_states::{RSS_QUEUE_NAME, RssItem};
+use tokio::{spawn, time::sleep};
 use tracing::{error, info};
-
-const INTERVAL: std::time::Duration = std::time::Duration::from_secs(60 * 10);
-const ITEMS_PER_FEED: usize = 100;
 
 /// Processor for RSS feeds.
 pub struct Processor {
-    visited: HashSet<String>,
+    queue: Arc<NatsQueue>,
 }
 
 impl Processor {
@@ -20,10 +19,8 @@ impl Processor {
     ///
     /// # Returns
     /// A new instance of the processor.
-    pub fn new() -> Self {
-        Self {
-            visited: HashSet::new(),
-        }
+    pub fn new(queue: Arc<NatsQueue>) -> Self {
+        Self { queue }
     }
 
     /// Run the processor.
@@ -33,67 +30,69 @@ impl Processor {
     ///
     /// # Returns
     /// A result indicating success or failure.
-    pub async fn run(&mut self, config: &RssConfig) -> Result<()> {
+    pub async fn run(&self, config: &RssConfig) -> Result<()> {
         info!("Starting RSS worker for feeds: {:?}", config.rss_urls);
+        let items_count = config.items_count;
+
         loop {
-            let mut repeated = false;
-            'list: for url in config.rss_urls.iter() {
-                info!("Starting fetching feeds from: [ {url} ]");
-                let xml = match Client::new().get(url).send().await?.bytes().await {
-                    Ok(bytes) => bytes,
-                    Err(e) => {
-                        error!("Failed to fetch feed from [ {url} ]: {e}");
-                        continue 'list;
-                    }
-                };
-                let channel = match Channel::read_from(&xml[..]) {
-                    Ok(channel) => channel,
-                    Err(e) => {
-                        error!("Failed to parse feed from [ {url} ]: {e}");
-                        continue 'list;
-                    }
-                };
-
-                info!("Feed: {}", channel.title());
-
-                'items: for item in channel.items().iter().take(ITEMS_PER_FEED) {
-                    let rss_item: RssItem = match item.try_into() {
-                        Ok(item) => item,
-                        Err(e) => {
-                            error!("Failed to convert item [ {:?} ]: {e}", item);
-                            continue 'items;
-                        }
+            for url in config.rss_urls.iter() {
+                let queue = self.queue.clone();
+                let url = url.clone();
+                spawn(async move {
+                    match Self::process_url(queue, url.clone(), items_count).await {
+                        Ok(_) => (),
+                        Err(e) => error!("Failed to process feed from ( {} ): {e}", url),
                     };
+                });
+            }
 
-                    if self.update_if_not_contains(&rss_item) {
-                        info!(
-                            "Sending rss item with Nats with title {} and hash {}",
-                            rss_item.title, rss_item.hash
-                        );
-                    } else {
-                        repeated = true;
-                    }
+            sleep(config.interval).await;
+        }
+    }
+
+    async fn process_url(queue: Arc<NatsQueue>, url: String, items_count: usize) -> Result<()> {
+        let xml = match Client::new().get(&url).send().await?.bytes().await {
+            Ok(bytes) => bytes,
+            Err(e) => {
+                return Err(anyhow!("Failed to fetch feed from ( {url} ): {e}"));
+            }
+        };
+        let channel = match Channel::read_from(&xml[..]) {
+            Ok(channel) => channel,
+            Err(e) => {
+                return Err(anyhow!("Failed to parse feed from ( {url} ): {e}"));
+            }
+        };
+
+        info!("Feed: {}", channel.title());
+
+        for item in channel.items().iter().take(items_count) {
+            let mut rss_item: RssItem = match item.try_into() {
+                Ok(item) => item,
+                Err(e) => {
+                    error!("Failed to convert item [ {:?} ]: {e}", item);
+                    continue;
                 }
+            };
+
+            if let Err(e) = rss_item.update_article_from_source().await {
+                error!(
+                    "Failed to update article from source for item [ {:?} ]: {e}",
+                    item
+                );
             }
 
-            if !repeated {
-                self.reset_visited();
-            }
-
-            sleep(INTERVAL).await;
+            match queue.publish(RSS_QUEUE_NAME, &rss_item).await {
+                Ok(_) => info!(
+                    "Successfully sent rss item to NATs queue. Rss item title: ( {} ) and hash: ( {} )",
+                    rss_item.title, rss_item.hash
+                ),
+                Err(e) => error!(
+                    "Failed to send rss item to NATs queue. Rss item title: ( {} ) and hash: ( {} ). {e}",
+                    rss_item.title, rss_item.hash
+                ),
+            };
         }
-    }
-
-    fn update_if_not_contains(&mut self, item: &RssItem) -> bool {
-        if self.visited.contains(&item.hash) {
-            false
-        } else {
-            self.visited.insert(item.hash.clone());
-            true
-        }
-    }
-
-    fn reset_visited(&mut self) {
-        self.visited.clear();
+        Ok(())
     }
 }
