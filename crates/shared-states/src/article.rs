@@ -21,36 +21,17 @@ pub async fn extract_article(url: &str) -> Result<String> {
         && let Some(element) = document.select(&content_selector).next()
     {
         let text = element.text().collect::<Vec<_>>().join(" ");
-        return Ok(text);
+        return Ok(replace_tags(&text).unwrap_or(text));
     };
 
     if let Ok(fallback_selector) = Selector::parse("div.post-content")
         && let Some(el2) = document.select(&fallback_selector).next()
     {
         let text = el2.text().collect::<Vec<_>>().join(" ");
-        return Ok(text);
+        return Ok(replace_tags(&text).unwrap_or(text));
     }
 
-    let Ok(div_selector) = Selector::parse("div") else {
-        return Err(anyhow!("Article extraction failed"));
-    };
-
-    let mut best_div = None;
-    let mut max_len = 0;
-
-    for div in document.select(&div_selector) {
-        let text = div.text().collect::<String>();
-        let len = text.trim().len();
-
-        if len > max_len {
-            max_len = len;
-            best_div = Some(text);
-        }
-    }
-    match best_div {
-        Some(content) => Ok(replace_tags(&content).unwrap_or(content)),
-        None => Err(anyhow!("No <div> found.")),
-    }
+    Err(anyhow!("Article extraction failed"))
 }
 
 fn replace_tags(content: &str) -> Result<String> {

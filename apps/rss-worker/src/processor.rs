@@ -1,11 +1,10 @@
-use std::sync::Arc;
-
 use crate::config::RssConfig;
 use anyhow::{Result, anyhow};
 use nats_middleware::NatsQueue;
 use reqwest::Client;
 use rss::Channel;
 use shared_states::{RSS_QUEUE_NAME, RssItem};
+use std::sync::Arc;
 use tokio::{spawn, time::sleep};
 use tracing::{error, info};
 

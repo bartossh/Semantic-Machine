@@ -7,6 +7,7 @@ use config::Config;
 use database::PostgresStorageGateway;
 use domain::Domain;
 use dotenvy::dotenv;
+use message_queue::RssFeedsProcessor;
 use nats_middleware::NatsQueue;
 use sqlx::migrate::Migrator;
 use std::io::{Error, ErrorKind};
@@ -16,8 +17,6 @@ use telemetry::Metrics;
 use tokio::time::interval;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
-
-use crate::message_queue::RssFeedsProcessor;
 
 mod auth;
 mod config;
