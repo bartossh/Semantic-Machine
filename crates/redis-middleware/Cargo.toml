@@ -1,0 +1,14 @@
+[package]
+name = "redis-middleware"
+version = "0.1.0"
+edition = "2024"
+
+[features]
+integrations = []
+
+[dependencies]
+redis = { workspace = true }
+anyhow = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }

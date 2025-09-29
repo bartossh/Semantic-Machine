@@ -1,6 +1,7 @@
 use crate::config::RssConfig;
 use anyhow::{Result, anyhow};
 use nats_middleware::NatsQueue;
+use redis_middleware::RedisMiddleware;
 use reqwest::Client;
 use rss::Channel;
 use shared_states::{RSS_QUEUE_NAME, RssItem};
@@ -11,6 +12,7 @@ use tracing::{error, info};
 /// Processor for RSS feeds.
 pub struct Processor {
     queue: Arc<NatsQueue>,
+    cache: Arc<RedisMiddleware>,
 }
 
 impl Processor {
@@ -18,8 +20,8 @@ impl Processor {
     ///
     /// # Returns
     /// A new instance of the processor.
-    pub fn new(queue: Arc<NatsQueue>) -> Self {
-        Self { queue }
+    pub fn new(queue: Arc<NatsQueue>, cache: Arc<RedisMiddleware>) -> Self {
+        Self { queue, cache }
     }
 
     /// Run the processor.
@@ -36,9 +38,10 @@ impl Processor {
         loop {
             for url in config.rss_urls.iter() {
                 let queue = self.queue.clone();
+                let cache = self.cache.clone();
                 let url = url.clone();
                 spawn(async move {
-                    match Self::process_url(queue, url.clone(), items_count).await {
+                    match Self::process_url(queue, cache, url.clone(), items_count).await {
                         Ok(_) => (),
                         Err(e) => error!("Failed to process feed from ( {} ): {e}", url),
                     };
@@ -49,7 +52,12 @@ impl Processor {
         }
     }
 
-    async fn process_url(queue: Arc<NatsQueue>, url: String, items_count: usize) -> Result<()> {
+    async fn process_url(
+        queue: Arc<NatsQueue>,
+        cache: Arc<RedisMiddleware>,
+        url: String,
+        items_count: usize,
+    ) -> Result<()> {
         let xml = match Client::new().get(&url).send().await?.bytes().await {
             Ok(bytes) => bytes,
             Err(e) => {
@@ -73,6 +81,23 @@ impl Processor {
                     continue;
                 }
             };
+
+            if match cache.retrieve(&rss_item.hash).await {
+                Err(e) => {
+                    error!("Cache connection faulure, {e}");
+                    None
+                }
+                Ok(value) => value,
+            }
+            .is_some()
+            {
+                info!("Item already processed");
+                continue;
+            }
+
+            if let Err(e) = cache.store(&rss_item.hash, "").await {
+                error!("Failed to store item in cache: {e}");
+            }
 
             if let Err(e) = rss_item.update_article_from_source().await {
                 error!(

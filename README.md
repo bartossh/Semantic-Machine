@@ -12,6 +12,7 @@ The Semantic Machine is an advanced natural language processing (NLP) and semant
    - llm-bert - large language bert model runtime entrypoint
    - nats-middleware - NATS middleware for handling subject building and routing
    - shared-states - shared state management for the Semantic Machine
+   - redis-middleware - Redis middleware for handling subject building and routing
  - apps:
    - rss-worker - message worker reading data from rss channels
    - api-server - RESTful API server for exposing semantic analysis endpoints
