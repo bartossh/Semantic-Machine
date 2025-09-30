@@ -7,7 +7,7 @@ use rss::Channel;
 use shared_states::{RSS_QUEUE_NAME, RssItem};
 use std::sync::Arc;
 use tokio::{spawn, time::sleep};
-use tracing::{error, info};
+use tracing::{error, info, warn};
 
 /// Processor for RSS feeds.
 pub struct Processor {
@@ -91,7 +91,7 @@ impl Processor {
             }
             .is_some()
             {
-                info!("Item already processed");
+                info!("RSS Item {} already processed", rss_item.hash);
                 continue;
             }
 
@@ -100,7 +100,7 @@ impl Processor {
             }
 
             if let Err(e) = rss_item.extract_article_from_source().await {
-                error!(
+                warn!(
                     "Failed to extract article from source for item [ {:?} ]: {e}",
                     item
                 );
