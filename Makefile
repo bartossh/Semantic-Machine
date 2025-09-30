@@ -23,7 +23,7 @@ audit:
 
 .PHONY: lint
 lint:
-	$(CARGO) clippy -- -D warnings
+	$(CARGO) clippy --all-targets --all-features -- -D warnings
 
 .PHONY: fmt
 fmt:
