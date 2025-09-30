@@ -1,14 +1,20 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+mod sentiment;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+use anyhow::Result;
+pub use sentiment::*;
+use serde::{Deserialize, Serialize};
+use std::fmt::Debug;
 
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
+/// BertAnalityze represents an entity that offers bert analitics.
+pub trait BertAnalityze<'a, T>
+where
+    T: Debug + Serialize + Deserialize<'a>,
+{
+    /// Analyzes slice of texts.
+    ///
+    /// * `texts` - slice of texts to analyze.
+    ///
+    /// # Returns
+    /// * Vector of results that are serializable or deserializable or error otherwise.
+    fn analyze(&self, texts: &[String]) -> impl Future<Output = Result<Vec<T>>>;
 }

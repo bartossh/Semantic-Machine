@@ -4,5 +4,11 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+serde = { workspace = true }
+anyhow = { workspace = true }
+tokio = { workspace = true }
+rust-bert = { workspace = true }
 
 [dev-dependencies]
+indicatif = { workspace = true }
+console = { workspace = true }
