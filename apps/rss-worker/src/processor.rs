@@ -99,9 +99,9 @@ impl Processor {
                 error!("Failed to store item in cache: {e}");
             }
 
-            if let Err(e) = rss_item.update_article_from_source().await {
+            if let Err(e) = rss_item.extract_article_from_source().await {
                 error!(
-                    "Failed to update article from source for item [ {:?} ]: {e}",
+                    "Failed to extract article from source for item [ {:?} ]: {e}",
                     item
                 );
             }

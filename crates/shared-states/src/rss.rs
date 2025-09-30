@@ -23,7 +23,7 @@ pub struct RssItem {
 }
 
 impl RssItem {
-    pub async fn update_article_from_source(&mut self) -> anyhow::Result<()> {
+    pub async fn extract_article_from_source(&mut self) -> anyhow::Result<()> {
         self.article = extract_article(&self.link).await?;
         Ok(())
     }

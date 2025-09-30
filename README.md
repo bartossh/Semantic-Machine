@@ -37,6 +37,17 @@ The Semantic Machine is an advanced natural language processing (NLP) and semant
 | Postgres Exporter   | `prometheuscommunity/postgres-exporter:latest` |
 | Redis Exporter      | `oliver006/redis_exporter:latest`              |
 
+## Data sources
+
+### RSS Feeds
+
+- https://blog.ethereum.org/feed.xml
+- https://media.rss.com/bitcoin-and-crypto-news-by-protos/feed.xml
+- https://crypto.news/feed/
+- https://nftlately.com/feed/
+- https://cointelegraph.com/rss
+
+
 ## License
 
 This project is licensed under the GNU AFFERO GENERAL PUBLIC LICENSE - see the [LICENSE](LICENSE) file for details.
