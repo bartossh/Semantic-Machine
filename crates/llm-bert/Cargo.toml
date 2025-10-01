@@ -7,8 +7,3 @@ edition = "2024"
 serde = { workspace = true }
 anyhow = { workspace = true }
 tokio = { workspace = true }
-rust-bert = { workspace = true }
-
-[dev-dependencies]
-indicatif = { workspace = true }
-console = { workspace = true }

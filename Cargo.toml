@@ -1,7 +1,6 @@
 [workspace]
-
-members = ["crates/*", "apps/*"]
 resolver = "2"
+members = ["crates/*", "apps/*"]
 
 [workspace.dependencies]
 paste = "1.0.15"
@@ -65,12 +64,10 @@ rss = "2.0.12"
 scraper = "0.24.0"
 regex = "1.11.3"
 redis = { version = "0.32.6", features = ["tokio-comp"] }
-rust-bert = { version = "0.23.0", features = ["download-libtorch"] }
-indicatif = { version = "0.16.2", features = ["rayon"] } 
-console = { version = "0.16.1", features = ["std"] }
+
+
 
 llm-bert = { path = "crates/llm-bert" }
 nats-middleware = { path = "crates/nats-middleware" }
 shared-states = { path = "crates/shared-states" }
 redis-middleware = { path = "crates/redis-middleware" }
-
